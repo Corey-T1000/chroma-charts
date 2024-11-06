@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="1200" height="630" fill="url(#gradient)"/>
+  
+  <!-- Grid pattern -->
+  <path d="M0 126h1200M0 252h1200M0 378h1200M0 504h1200" stroke="url(#gridGradient)" stroke-width="1" stroke-dasharray="4 4"/>
+  
+  <!-- Chart visualization -->
+  <path d="M200 430c100-80 200-120 300-60s200 100 300 20 200-140 200-80" stroke="url(#chartGradient1)" stroke-width="4" fill="none"/>
+  <path d="M200 380c100-40 200-80 300-20s200 60 300-20s200-100 200-40" stroke="url(#chartGradient2)" stroke-width="4" fill="none"/>
+  <path d="M200 330c100-60 200-40 300 20s200 80 300 0s200-120 200-60" stroke="url(#chartGradient3)" stroke-width="4" fill="none"/>
+  
+  <!-- Title -->
+  <text x="600" y="200" text-anchor="middle" fill="white" style="font-size: 72px; font-weight: bold; font-family: system-ui, -apple-system, sans-serif;">
+    Chroma-Charts
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="260" text-anchor="middle" fill="white" opacity="0.8" style="font-size: 24px; font-family: system-ui, -apple-system, sans-serif;">
+    Beautiful, Accessible Data Visualization Palettes
+  </text>
+  
+  <!-- Definitions -->
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="gradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#2d2d2d"/>
+    </linearGradient>
+    
+    <!-- Grid gradient -->
+    <linearGradient id="gridGradient" x1="0" y1="0" x2="1200" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    
+    <!-- Chart gradients -->
+    <linearGradient id="chartGradient1" x1="200" y1="0" x2="1200" y2="0">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="100%" stop-color="#FF6B6B" stop-opacity="0.5"/>
+    </linearGradient>
+    
+    <linearGradient id="chartGradient2" x1="200" y1="0" x2="1200" y2="0">
+      <stop offset="0%" stop-color="#4ECDC4"/>
+      <stop offset="100%" stop-color="#4ECDC4" stop-opacity="0.5"/>
+    </linearGradient>
+    
+    <linearGradient id="chartGradient3" x1="200" y1="0" x2="1200" y2="0">
+      <stop offset="0%" stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#FFD93D" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+</svg>
