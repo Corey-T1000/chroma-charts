@@ -146,8 +146,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Lucide](https://lucide.dev/) for the icons
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [bolt.new](https://bolt.new) for development platform
-- [authzed](https://authzed.com) for design inspiration
-
----
-
-Made with ⚡️ by [StackBlitz](https://stackblitz.com)
+- [authzed](https://authzed.com) for supporting problem solving
