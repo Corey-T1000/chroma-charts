@@ -8,6 +8,8 @@ import {
   Plus,
   Trash2,
   ChevronDown,
+  Copy,
+  Palette,
 } from 'lucide-react';
 import { exportConfig } from '@/lib/export-utils';
 import { ColorConfig, NamedColor, ColorSet } from '@/lib/types';
@@ -16,6 +18,7 @@ import {
   compressToEncodedURIComponent,
   decompressFromEncodedURIComponent,
 } from '@/lib/compression';
+import { generateAccessiblePalette, ColorScheme } from '@/lib/color-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +30,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -43,6 +49,14 @@ const defaultColors: ColorConfig = {
   names: {},
   sets: [],
 };
+
+const colorSchemes: { label: string; value: ColorScheme }[] = [
+  { label: 'Mixed Colors', value: 'mixed' },
+  { label: 'Warm Colors', value: 'warm' },
+  { label: 'Cool Colors', value: 'cool' },
+  { label: 'Neutral Colors', value: 'neutral' },
+  { label: 'Monochromatic', value: 'monochromatic' },
+];
 
 export function StyleGenerator() {
   const [colors, setColors] = useState<ColorConfig>(defaultColors);
@@ -130,6 +144,38 @@ export function StyleGenerator() {
     }
   };
 
+  const handleRemoveColor = (index: number) => {
+    if (getCurrentColors().light.length <= 1) {
+      toast({
+        title: 'Cannot remove color',
+        description: 'At least one color must remain in the set.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (activeSet) {
+      setColors((prev) => ({
+        ...prev,
+        sets: prev.sets?.map((set) =>
+          set.id === activeSet
+            ? {
+                ...set,
+                light: set.light.filter((_, i) => i !== index),
+                dark: set.dark.filter((_, i) => i !== index),
+              }
+            : set
+        ),
+      }));
+    } else {
+      setColors((prev) => ({
+        ...prev,
+        light: prev.light.filter((_, i) => i !== index),
+        dark: prev.dark.filter((_, i) => i !== index),
+      }));
+    }
+  };
+
   const handleAddColor = () => {
     const maxColors = activeSet
       ? colors.sets?.find((s) => s.id === activeSet)?.size
@@ -169,27 +215,44 @@ export function StyleGenerator() {
     }
   };
 
-  const handleAutoGenerate = (generatedColors: string[]) => {
-    setAutoGenCounter((prev) => prev + 1);
-    if (activeSet) {
-      setColors((prev) => ({
-        ...prev,
-        sets: prev.sets?.map((set) =>
-          set.id === activeSet
-            ? {
-                ...set,
-                light: generatedColors,
-                dark: [...generatedColors].reverse(),
-              }
-            : set
-        ),
-      }));
-    } else {
-      setColors((prev) => ({
-        ...prev,
-        light: generatedColors,
-        dark: [...generatedColors].reverse(),
-      }));
+  const handleAutoGenerate = (scheme: ColorScheme = 'mixed') => {
+    const currentSize = getCurrentColors().light.length;
+    const { light, dark } = generateAccessiblePalette(
+      availableColors,
+      currentSize,
+      autoGenCounter,
+      scheme
+    );
+
+    if (light.length > 0 && dark.length > 0) {
+      if (activeSet) {
+        setColors((prev) => ({
+          ...prev,
+          sets: prev.sets?.map((set) =>
+            set.id === activeSet
+              ? {
+                  ...set,
+                  light,
+                  dark,
+                }
+              : set
+          ),
+        }));
+      } else {
+        setColors((prev) => ({
+          ...prev,
+          light,
+          dark,
+        }));
+      }
+
+      setAutoGenCounter((prev) => prev + 1);
+      toast({
+        title: "Colors generated",
+        description: `Generated ${scheme} color palette${availableColors.length > 0 
+          ? " based on your imported colors"
+          : ""}.`,
+      });
     }
   };
 
@@ -241,6 +304,38 @@ export function StyleGenerator() {
     }));
     if (activeSet === setId) {
       setActiveSet(null);
+    }
+  };
+
+  const handleDuplicateSet = (setId: string | null) => {
+    const sourceSet = setId 
+      ? colors.sets?.find((set) => set.id === setId)
+      : { 
+          name: 'Default Set',
+          size: colors.light.length,
+          light: colors.light,
+          dark: colors.dark
+        };
+
+    if (sourceSet) {
+      const newSet: ColorSet = {
+        id: `set-${Date.now()}`,
+        name: `${sourceSet.name} (Copy)`,
+        size: sourceSet.size,
+        light: [...sourceSet.light],
+        dark: [...sourceSet.dark],
+      };
+
+      setColors((prev) => ({
+        ...prev,
+        sets: [...(prev.sets || []), newSet],
+      }));
+
+      setActiveSet(newSet.id);
+      toast({
+        title: 'Set duplicated',
+        description: `Created a copy of "${sourceSet.name}"`,
+      });
     }
   };
 
@@ -322,8 +417,22 @@ export function StyleGenerator() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Color Sets</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setActiveSet(null)}>
-                  Default Set
+                <DropdownMenuItem 
+                  className="flex items-center justify-between group"
+                  onClick={() => setActiveSet(null)}
+                >
+                  <span>Default Set</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 bg-muted"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicateSet(null);
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 </DropdownMenuItem>
                 {colors.sets?.map((set) => (
                   <DropdownMenuItem
@@ -332,17 +441,30 @@ export function StyleGenerator() {
                     onClick={() => setActiveSet(set.id)}
                   >
                     <span>{set.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSet(set.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicateSet(set.id);
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSet(set.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
@@ -404,19 +526,39 @@ export function StyleGenerator() {
                     availableColors={availableColors}
                     onColorChange={handleColorChange}
                     onAddColor={handleAddColor}
-                    onAutoGenerate={handleAutoGenerate}
+                    onAutoGenerate={() => handleAutoGenerate()}
                     autoGenCounter={autoGenCounter}
                     maxColors={
                       activeSet
                         ? colors.sets?.find((s) => s.id === activeSet)?.size
                         : undefined
                     }
+                    onRemoveColor={handleRemoveColor}
                   />
                 </CardContent>
               </Card>
 
               <div className="space-y-4">
                 <div className="flex gap-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline">
+                        <Palette className="mr-2 h-4 w-4" />
+                        Generate Colors
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {colorSchemes.map((scheme) => (
+                        <DropdownMenuItem
+                          key={scheme.value}
+                          onClick={() => handleAutoGenerate(scheme.value)}
+                        >
+                          {scheme.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline">

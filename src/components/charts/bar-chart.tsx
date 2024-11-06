@@ -7,9 +7,15 @@ interface BarChartProps {
 }
 
 export function BarChartComponent({ data, colors }: BarChartProps) {
+  // Ensure all values are positive
+  const positiveData = data.map(item => ({
+    ...item,
+    value: Math.abs(item.value)
+  }));
+
   return (
     <ResponsiveContainer>
-      <RechartsBarChart data={data} margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+      <RechartsBarChart data={positiveData} margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
         <CartesianGrid 
           strokeDasharray="3 3" 
           horizontal={true}
@@ -44,7 +50,7 @@ export function BarChartComponent({ data, colors }: BarChartProps) {
           radius={[4, 4, 0, 0]}
           maxBarSize={40}
         >
-          {data.map((_, index) => (
+          {positiveData.map((_, index) => (
             <Cell 
               key={index} 
               fill={colors[index]} 

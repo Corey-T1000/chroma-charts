@@ -1,4 +1,4 @@
-import { NamedColor } from './types';
+import { ColorConfig, NamedColor } from './types';
 
 interface HSL {
   h: number;
@@ -6,7 +6,9 @@ interface HSL {
   l: number;
 }
 
-// Utility function kept for potential future use
+export type ColorScheme = 'warm' | 'cool' | 'neutral' | 'monochromatic' | 'mixed';
+
+// Convert hex to HSL
 export function hexToHsl(hex: string): HSL {
   hex = hex.replace(/^#/, '');
 
@@ -44,6 +46,40 @@ export function hexToHsl(hex: string): HSL {
   };
 }
 
+// Convert HSL to hex
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h < 360) {
+    r = c; g = 0; b = x;
+  }
+
+  const rHex = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+  const gHex = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+  const bHex = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+
+  return `#${rHex}${gHex}${bHex}`;
+}
+
 // Calculate relative luminance for WCAG contrast ratio
 function getLuminance(hex: string): number {
   const rgb = hex.replace(/^#/, '').match(/.{2}/g)!
@@ -70,16 +106,26 @@ function sortByLuminance(colors: string[]): string[] {
   return [...colors].sort((a, b) => getLuminance(a) - getLuminance(b));
 }
 
+// Create a dark mode variant while preserving hue
+function createDarkModeVariant(color: string): string {
+  const hsl = hexToHsl(color);
+  return hslToHex(
+    hsl.h,
+    Math.min(hsl.s + 10, 100), // Slightly increase saturation
+    Math.max(30, Math.min(60, 100 - hsl.l)) // Adjust lightness for dark mode
+  );
+}
+
 // Check if a color is suitable for light mode (not too light)
 function isSuitableForLightMode(hex: string): boolean {
   const luminance = getLuminance(hex);
-  return luminance < 0.7; // Ensures color is not too light
+  return luminance < 0.7;
 }
 
-// Check if a color is suitable for dark mode (not too dark)
-function isSuitableForDarkMode(hex: string): boolean {
-  const luminance = getLuminance(hex);
-  return luminance > 0.25 && luminance < 0.8; // Ensures good visibility in dark mode
+// Generate a color with specific hue range
+function generateColorInRange(hueRange: [number, number], s: number, l: number): string {
+  const hue = Math.floor(Math.random() * (hueRange[1] - hueRange[0])) + hueRange[0];
+  return hslToHex(hue, s, l);
 }
 
 // Group colors by their base name and sort by luminance
@@ -98,7 +144,6 @@ function groupColorsByName(colors: NamedColor[]): Map<string, string[]> {
     groups.get(prefix)?.push(color.value);
   });
   
-  // Sort each group by luminance
   groups.forEach((groupColors, name) => {
     groups.set(name, sortByLuminance(groupColors));
   });
@@ -106,6 +151,7 @@ function groupColorsByName(colors: NamedColor[]): Map<string, string[]> {
   return groups;
 }
 
+// Get unique colors from the set
 function getUniqueColors(colors: NamedColor[]): string[] {
   const uniqueColors = new Set<string>();
   
@@ -118,12 +164,107 @@ function getUniqueColors(colors: NamedColor[]): string[] {
   return Array.from(uniqueColors);
 }
 
-// Select colors with good contrast from available shades
+// Generate colors based on scheme and imported colors
+function generateSchemeColors(
+  count: number, 
+  scheme: ColorScheme, 
+  importedColors: string[] = []
+): { light: string[], dark: string[] } {
+  const lightColors: string[] = [];
+  const darkColors: string[] = [];
+  
+  // If we have imported colors, use their hues as a base
+  const baseHues = importedColors.map(color => hexToHsl(color).h);
+  const baseHue = baseHues.length > 0 
+    ? baseHues[Math.floor(Math.random() * baseHues.length)]
+    : Math.floor(Math.random() * 360);
+
+  switch (scheme) {
+    case 'warm': {
+      // Warm colors: reds, oranges, yellows (0-60)
+      const warmImported = importedColors.filter(color => {
+        const hue = hexToHsl(color).h;
+        return hue >= 0 && hue <= 60;
+      });
+      
+      for (let i = 0; i < count; i++) {
+        const light = warmImported[i] || generateColorInRange([0, 60], 65 + Math.random() * 20, 45 + Math.random() * 15);
+        lightColors.push(light);
+        darkColors.push(createDarkModeVariant(light));
+      }
+      break;
+    }
+
+    case 'cool': {
+      // Cool colors: blues, greens, purples (180-300)
+      const coolImported = importedColors.filter(color => {
+        const hue = hexToHsl(color).h;
+        return hue >= 180 && hue <= 300;
+      });
+      
+      for (let i = 0; i < count; i++) {
+        const light = coolImported[i] || generateColorInRange([180, 300], 60 + Math.random() * 20, 45 + Math.random() * 15);
+        lightColors.push(light);
+        darkColors.push(createDarkModeVariant(light));
+      }
+      break;
+    }
+
+    case 'neutral': {
+      // Neutral colors: low saturation across all hues
+      const neutralImported = importedColors.filter(color => {
+        const { s } = hexToHsl(color);
+        return s <= 30;
+      });
+      
+      for (let i = 0; i < count; i++) {
+        const light = neutralImported[i] || generateColorInRange([0, 360], 15 + Math.random() * 15, 40 + Math.random() * 20);
+        lightColors.push(light);
+        darkColors.push(createDarkModeVariant(light));
+      }
+      break;
+    }
+
+    case 'monochromatic': {
+      // Use imported color's hue if available, otherwise use random hue
+      const hue = importedColors.length > 0 ? hexToHsl(importedColors[0]).h : baseHue;
+      
+      for (let i = 0; i < count; i++) {
+        const saturation = 40 + Math.floor((i / count) * 40);
+        const lightness = 35 + Math.floor((i / count) * 25);
+        const light = hslToHex(hue, saturation, lightness);
+        lightColors.push(light);
+        darkColors.push(createDarkModeVariant(light));
+      }
+      break;
+    }
+
+    default: { // 'mixed'
+      // Use imported colors first, then generate additional ones if needed
+      const step = 360 / count;
+      
+      for (let i = 0; i < count; i++) {
+        if (i < importedColors.length) {
+          lightColors.push(importedColors[i]);
+          darkColors.push(createDarkModeVariant(importedColors[i]));
+        } else {
+          const hue = (baseHue + i * step) % 360;
+          const light = hslToHex(hue, 65 + Math.random() * 20, 45 + Math.random() * 15);
+          lightColors.push(light);
+          darkColors.push(createDarkModeVariant(light));
+        }
+      }
+    }
+  }
+
+  return { light: lightColors, dark: darkColors };
+}
+
+// Select colors with good contrast
 function selectContrastingColors(
   colorGroups: Map<string, string[]>, 
-  count: number, 
-  seed: number,
-  isLightMode: boolean
+  count: number,
+  seed: number
 ): string[] {
   const selected: string[] = [];
   const groupNames = Array.from(colorGroups.keys());
@@ -133,25 +274,14 @@ function selectContrastingColors(
     return Math.sin(seed * groupNames.indexOf(a)) - Math.sin(seed * groupNames.indexOf(b));
   });
 
-  // Get all available colors that are suitable for the mode
+  // Get all available colors that are suitable for light mode
   const allSuitableColors = Array.from(colorGroups.values())
     .flat()
-    .filter(isLightMode ? isSuitableForLightMode : isSuitableForDarkMode);
+    .filter(isSuitableForLightMode);
 
   // If we don't have enough suitable colors, use all available colors
   if (allSuitableColors.length < count) {
-    const allColors = Array.from(colorGroups.values()).flat();
-    const sorted = sortByLuminance(allColors);
-    // For dark mode, prefer medium-bright colors
-    if (!isLightMode) {
-      return sorted
-        .filter(color => {
-          const lum = getLuminance(color);
-          return lum > 0.25 && lum < 0.8;
-        })
-        .slice(0, count);
-    }
-    return sorted.slice(0, count);
+    return sortByLuminance(allSuitableColors).slice(0, count);
   }
 
   // Try to select one color from each group first
@@ -159,7 +289,7 @@ function selectContrastingColors(
     if (selected.length >= count) break;
     
     const shades = (colorGroups.get(groupName) || [])
-      .filter(isLightMode ? isSuitableForLightMode : isSuitableForDarkMode);
+      .filter(isSuitableForLightMode);
     
     if (shades.length === 0) continue;
     
@@ -244,27 +374,27 @@ function selectContrastingColors(
   return selected;
 }
 
-export function generateAccessiblePalette(colors: NamedColor[], count: number, seed: number = 0): string[] {
-  if (colors.length === 0) return [];
-
-  // Group colors by their base name
-  const colorGroups = groupColorsByName(colors);
+export function generateAccessiblePalette(
+  colors: NamedColor[], 
+  count: number,
+  seed: number = 0,
+  scheme: ColorScheme = 'mixed'
+): { light: string[], dark: string[] } {
+  // Extract all unique colors from the imported set
+  const importedColors = getUniqueColors(colors);
   
-  // If we couldn't group by names, fall back to unique colors
-  if (colorGroups.size === 0) {
-    const uniqueColors = getUniqueColors(colors);
-    if (uniqueColors.length === 0) return [];
-    
-    // If we don't have enough unique colors, cycle through them
-    const result: string[] = [];
-    while (result.length < count) {
-      result.push(uniqueColors[result.length % uniqueColors.length]);
+  // Generate new colors based on the scheme, using imported colors as reference
+  const generated = generateSchemeColors(count, scheme, importedColors);
+  
+  // If we have imported colors, try to maintain their relationships
+  if (colors.length > 0) {
+    const colorGroups = groupColorsByName(colors);
+    if (colorGroups.size > 0) {
+      const selectedLight = selectContrastingColors(colorGroups, count, seed);
+      const selectedDark = selectedLight.map(createDarkModeVariant);
+      return { light: selectedLight, dark: selectedDark };
     }
-    
-    // Use seed to create different arrangements
-    return result.sort(() => Math.sin(seed * result.length));
   }
   
-  // Select colors with good contrast for light mode
-  return selectContrastingColors(colorGroups, count, seed, true);
+  return generated;
 }

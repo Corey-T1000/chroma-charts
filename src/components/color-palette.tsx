@@ -2,14 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ColorConfig, NamedColor } from '@/lib/types';
-import { Plus, Wand2 } from 'lucide-react';
+import { Plus, Wand2, X } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { generateAccessiblePalette } from '@/lib/color-utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface ColorPaletteProps {
@@ -17,7 +16,8 @@ interface ColorPaletteProps {
   availableColors: NamedColor[];
   onColorChange: (mode: 'light' | 'dark', index: number, color: string) => void;
   onAddColor: () => void;
-  onAutoGenerate: (colors: string[]) => void;
+  onAutoGenerate: () => void;
+  onRemoveColor: (index: number) => void;
   autoGenCounter: number;
   maxColors?: number;
 }
@@ -28,6 +28,7 @@ export function ColorPalette({
   onColorChange, 
   onAddColor,
   onAutoGenerate,
+  onRemoveColor,
   autoGenCounter,
   maxColors
 }: ColorPaletteProps) {
@@ -54,24 +55,8 @@ export function ColorPalette({
   }, [colors, availableColors]);
 
   const handleAutoGenerate = useCallback(() => {
-    // Use the current number of colors instead of maxColors
-    const currentSize = colors.light.length;
-    const generatedColors = generateAccessiblePalette(
-      availableColors,
-      currentSize,
-      autoGenCounter
-    );
-
-    if (generatedColors.length > 0) {
-      onAutoGenerate(generatedColors);
-      toast({
-        title: "Colors generated",
-        description: availableColors.length > 0 
-          ? "Generated palette based on your imported colors."
-          : "Generated a harmonious default palette.",
-      });
-    }
-  }, [availableColors, colors.light.length, onAutoGenerate, toast, autoGenCounter]);
+    onAutoGenerate();
+  }, [onAutoGenerate]);
 
   const canAddMore = !maxColors || colors.light.length < maxColors;
 
@@ -144,6 +129,16 @@ export function ColorPalette({
                         </ScrollArea>
                       </PopoverContent>
                     </Popover>
+                    {colors[mode].length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute -right-2 -top-2 h-5 w-5 rounded-full bg-muted hover:bg-muted-foreground/20"
+                        onClick={() => onRemoveColor(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
                     <div className="mt-1 text-xs text-center text-muted-foreground">
                       {namedColor?.name || color}
                     </div>
