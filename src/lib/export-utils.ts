@@ -1,4 +1,4 @@
-import { ColorConfig, ColorSet } from './types';
+import { ColorConfig } from './types';
 
 function getColorName(color: string, names?: { [key: string]: string }): string | undefined {
   return names?.[color];

@@ -8,14 +8,14 @@ import { Moon, Sun } from 'lucide-react';
 
 interface ChartData {
   name: string;
-  [key: string]: string | number;
+  [key: string]: string | number; // Add index signature
 }
 
 function generateData(colorCount: number): ChartData[] {
   // Generate 8 data points for the X axis
   const dataPoints = Array.from({ length: 8 }, (_, i) => ({
     name: `Point ${i + 1}`,
-  }));
+  } as ChartData));
 
   // For each color/series, generate unique values
   for (let i = 0; i < colorCount; i++) {

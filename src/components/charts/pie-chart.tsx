@@ -22,7 +22,7 @@ export function PieChartComponent({ data, colors }: PieChartProps) {
           stroke="var(--background)"
           strokeWidth={2}
         >
-          {data.map((entry, index) => (
+          {data.map((_, index) => (
             <Cell 
               key={index} 
               fill={colors[index]}

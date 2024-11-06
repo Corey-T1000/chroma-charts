@@ -7,7 +7,6 @@ import { parseCssColors } from '@/lib/css-parser';
 import { ColorConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface CssImporterProps {
   onImport: (colors: ColorConfig, cssText?: string) => void;

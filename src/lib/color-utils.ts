@@ -6,6 +6,7 @@ interface HSL {
   l: number;
 }
 
+// Utility function kept for potential future use
 function hexToHsl(hex: string): HSL {
   hex = hex.replace(/^#/, '');
 
@@ -265,10 +266,5 @@ export function generateAccessiblePalette(colors: NamedColor[], count: number, s
   }
   
   // Select colors with good contrast for light mode
-  const lightModeColors = selectContrastingColors(colorGroups, count, seed, true);
-  
-  // For dark mode, we want to ensure we're using brighter variants
-  const darkModeColors = selectContrastingColors(colorGroups, count, seed + 1000, false);
-  
-  return lightModeColors;
+  return selectContrastingColors(colorGroups, count, seed, true);
 }
