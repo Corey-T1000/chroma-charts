@@ -7,7 +7,7 @@ interface HSL {
 }
 
 // Utility function kept for potential future use
-function hexToHsl(hex: string): HSL {
+export function hexToHsl(hex: string): HSL {
   hex = hex.replace(/^#/, '');
 
   const r = parseInt(hex.slice(0, 2), 16) / 255;
