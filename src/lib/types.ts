@@ -18,4 +18,5 @@ export interface ColorSet {
   size: number;
   light: string[];
   dark: string[];
+  strictMode?: boolean;
 }
