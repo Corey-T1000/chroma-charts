@@ -3,6 +3,7 @@ import { ColorPalette } from '@/components/color-palette';
 import { ChartPreview } from '@/components/chart-preview';
 import { CssImporter } from '@/components/css-importer';
 import { Button } from '@/components/ui/button';
+import { EditableText } from '@/components/ui/editable-text';
 import {
   Download,
   Plus,
@@ -377,6 +378,25 @@ export function StyleGenerator() {
     });
   };
 
+  const handleRenameSet = (setId: string, newName: string) => {
+    setColors((prev) => ({
+      ...prev,
+      sets: prev.sets?.map((set) =>
+        set.id === setId
+          ? {
+              ...set,
+              name: newName,
+            }
+          : set
+      ),
+    }));
+
+    toast({
+      title: "Set renamed",
+      description: `Renamed set to "${newName}".`,
+    });
+  };
+
   const generateCssText = () => {
     const getColorName = (color: string): string | undefined => {
       const namedColor = availableColors.find((c) => c.value === color);
@@ -449,7 +469,11 @@ export function StyleGenerator() {
                     className="flex items-center justify-between group"
                     onClick={() => setActiveSet(set.id)}
                   >
-                    <span>{set.name}</span>
+                    <EditableText
+                      value={set.name}
+                      onChange={(newName) => handleRenameSet(set.id, newName)}
+                      className="flex-1"
+                    />
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -573,5 +597,3 @@ export function StyleGenerator() {
     </div>
   );
 }
-
-export default StyleGenerator;

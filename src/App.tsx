@@ -1,4 +1,4 @@
-import StyleGenerator from '@/components/style-generator';
+import { StyleGenerator } from '@/components/style-generator';
 
 function App() {
   return (
