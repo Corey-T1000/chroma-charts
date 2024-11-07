@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@/components/theme-provider';
-import { StyleGenerator } from '@/components/style-generator';
+import StyleGenerator from '@/components/style-generator';
 
 function App() {
   return (

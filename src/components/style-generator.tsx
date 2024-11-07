@@ -45,7 +45,7 @@ const defaultColors: ColorConfig = {
   sets: [],
 };
 
-export function StyleGenerator() {
+export default function StyleGenerator() {
   const [colors, setColors] = useState<ColorConfig>(defaultColors);
   const [availableColors, setAvailableColors] = useState<NamedColor[]>([]);
   const [autoGenCounter, setAutoGenCounter] = useState(0);
@@ -197,13 +197,17 @@ export function StyleGenerator() {
 
   const handleAutoGenerate = (scheme: ColorScheme = 'mixed') => {
     const currentSize = getCurrentColors().light.length;
+    const currentColors = getCurrentColors().light.map((color, index) => ({
+      name: `Color ${index + 1}`,
+      value: color
+    }));
+
+    const seed = autoGenCounter + Math.random() * 1000;
+
     const { light, dark } = generateAccessiblePalette(
-      availableColors.length > 0 ? availableColors : getCurrentColors().light.map((color, index) => ({
-        name: `Color ${index + 1}`,
-        value: color
-      })),
+      availableColors.length > 0 ? availableColors : currentColors,
       currentSize,
-      autoGenCounter,
+      seed,
       scheme
     );
 
@@ -232,9 +236,7 @@ export function StyleGenerator() {
       setAutoGenCounter((prev) => prev + 1);
       toast({
         title: "Colors generated",
-        description: `Generated ${scheme} color palette${availableColors.length > 0 
-          ? " based on your imported colors"
-          : ""}.`,
+        description: `Generated ${scheme} color palette with ${currentSize} colors.`,
       });
     }
   };
@@ -523,7 +525,7 @@ export function StyleGenerator() {
                   <p>
                     Chroma-Charts was developed using <a 
                       href="https://bolt.new" 
-                      target="_blank" 
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
@@ -531,7 +533,7 @@ export function StyleGenerator() {
                     </a> by the design team at{' '}
                     <a 
                       href="https://authzed.com" 
-                      target="_blank" 
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
