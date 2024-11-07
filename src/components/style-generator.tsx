@@ -8,6 +8,8 @@ import {
   Plus,
   Trash2,
   ChevronDown,
+  Copy,
+  Pencil,
 } from 'lucide-react';
 import { exportConfig } from '@/lib/export-utils';
 import { ColorConfig, NamedColor, ColorSet } from '@/lib/types';
@@ -33,7 +35,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ColorScheme, generateAccessiblePalette } from '@/lib/color-utils';
@@ -44,6 +46,7 @@ const defaultColors: ColorConfig = {
   names: {},
   sets: [],
   strictMode: false,
+  defaultSetName: 'Default Set'
 };
 
 export default function StyleGenerator() {
@@ -51,9 +54,9 @@ export default function StyleGenerator() {
   const [availableColors, setAvailableColors] = useState<NamedColor[]>([]);
   const [autoGenCounter, setAutoGenCounter] = useState(0);
   const [activeSet, setActiveSet] = useState<string | null>(null);
-  const [newSetName, setNewSetName] = useState('');
-  const [newSetSize, setNewSetSize] = useState('3');
-  const [isNewSetDialogOpen, setIsNewSetDialogOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [renameSetId, setRenameSetId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -102,7 +105,7 @@ export default function StyleGenerator() {
   };
 
   const getActiveSetName = (): string => {
-    if (!activeSet) return 'Default Set';
+    if (!activeSet) return colors.defaultSetName || 'Default Set';
     const currentSet = colors.sets?.find((set) => set.id === activeSet);
     return currentSet?.name || 'Default Set';
   };
@@ -200,8 +203,30 @@ export default function StyleGenerator() {
     const currentColors = getCurrentColors();
     const currentSize = currentColors.light.length;
     
+    // Create a set of available colors based on the current mode
+    let colorsForGeneration = availableColors;
+    if (!currentColors.strictMode && availableColors.length > 0) {
+      // In non-strict mode, create variations of available colors
+      colorsForGeneration = [
+        ...availableColors,
+        ...availableColors.map(color => ({
+          name: `${color.name}_variant`,
+          value: color.value
+        }))
+      ];
+    } else if (availableColors.length === 0) {
+      // If no colors are available, create some default ones
+      colorsForGeneration = [
+        { name: 'default1', value: '#4299E1' },
+        { name: 'default2', value: '#48BB78' },
+        { name: 'default3', value: '#ED8936' },
+        { name: 'default4', value: '#9F7AEA' },
+        { name: 'default5', value: '#F56565' }
+      ];
+    }
+
     const { light, dark } = generateAccessiblePalette(
-      availableColors,
+      colorsForGeneration,
       currentSize,
       autoGenCounter + Math.random() * 1000,
       scheme,
@@ -274,6 +299,7 @@ export default function StyleGenerator() {
           names,
           sets: [],
           strictMode: true,
+          defaultSetName: 'Default Set'
         });
         return;
       }
@@ -286,6 +312,7 @@ export default function StyleGenerator() {
         dark: [importedColors.dark[0] || '#ffffff'],
         sets: [],
         strictMode: true,
+        defaultSetName: 'Default Set'
       });
     }
   };
@@ -310,40 +337,107 @@ export default function StyleGenerator() {
     if (activeSet === setId) {
       setActiveSet(null);
     }
+    toast({
+      title: "Set deleted",
+      description: "The color set has been removed.",
+    });
   };
 
-  const handleDuplicateSet = (setId: string) => {
-    const setToDuplicate = colors.sets?.find((set) => set.id === setId);
-    if (!setToDuplicate) return;
+  const handleDuplicateSet = (setId?: string) => {
+    let setToDuplicate: ColorSet | ColorConfig;
+    let sourceName: string;
+
+    if (setId) {
+      const foundSet = colors.sets?.find((set) => set.id === setId);
+      if (!foundSet) return;
+      setToDuplicate = foundSet;
+      sourceName = foundSet.name;
+    } else {
+      // Duplicate default set
+      setToDuplicate = {
+        light: [...colors.light],
+        dark: [...colors.dark],
+        strictMode: colors.strictMode,
+        size: colors.light.length
+      };
+      sourceName = colors.defaultSetName || 'Default Set';
+    }
 
     const newSet: ColorSet = {
       ...setToDuplicate,
       id: `set-${Date.now()}`,
-      name: `${setToDuplicate.name} (Copy)`,
+      name: `${sourceName} (Copy)`,
     };
 
     setColors((prev) => ({
       ...prev,
       sets: [...(prev.sets || []), newSet],
     }));
+
+    toast({
+      title: "Set duplicated",
+      description: `Created a copy of "${sourceName}".`,
+    });
   };
 
-  const handleCreateSet = () => {
-    if (!newSetName || parseInt(newSetSize) < 1) {
-      toast({
-        title: 'Invalid input',
-        description: 'Please provide a valid name and size for the color set.',
-        variant: 'destructive',
-      });
-      return;
+  const handleRenameSet = () => {
+    if (!renameValue.trim()) return;
+
+    if (renameSetId) {
+      // Rename custom set
+      setColors((prev) => ({
+        ...prev,
+        sets: prev.sets?.map((set) =>
+          set.id === renameSetId
+            ? {
+                ...set,
+                name: renameValue.trim(),
+              }
+            : set
+        ),
+      }));
+    } else {
+      // Rename default set
+      setColors((prev) => ({
+        ...prev,
+        defaultSetName: renameValue.trim()
+      }));
     }
+
+    setIsRenameDialogOpen(false);
+    setRenameSetId(null);
+    setRenameValue('');
+
+    toast({
+      title: "Set renamed",
+      description: "The color set name has been updated.",
+    });
+  };
+
+  const handleCreateNewSet = () => {
+    const currentColors = getCurrentColors();
+    const currentName = getActiveSetName();
+    
+    // Find the highest number in existing set names with the same base name
+    const baseNameRegex = new RegExp(`^${currentName}(?: (\\d+))?$`);
+    const existingNumbers = colors.sets
+      ?.map(set => {
+        const match = set.name.match(baseNameRegex);
+        return match ? parseInt(match[1] || '1') : 0;
+      })
+      .filter(num => !isNaN(num));
+    
+    const nextNumber = existingNumbers.length > 0 
+      ? Math.max(...existingNumbers) + 1 
+      : 2;
 
     const newSet: ColorSet = {
       id: `set-${Date.now()}`,
-      name: newSetName,
-      size: parseInt(newSetSize),
-      light: ['#000000'],
-      dark: ['#ffffff'],
+      name: `${currentName} ${nextNumber}`,
+      size: currentColors.light.length,
+      light: [...currentColors.light],
+      dark: [...currentColors.dark],
+      strictMode: currentColors.strictMode,
     };
 
     setColors((prev) => ({
@@ -351,10 +445,25 @@ export default function StyleGenerator() {
       sets: [...(prev.sets || []), newSet],
     }));
 
-    setNewSetName('');
-    setNewSetSize('3');
     setActiveSet(newSet.id);
-    setIsNewSetDialogOpen(false);
+    toast({
+      title: "Set created",
+      description: `Created new color set "${newSet.name}".`,
+    });
+  };
+
+  const openRenameDialog = (setId?: string) => {
+    if (setId) {
+      const set = colors.sets?.find((s) => s.id === setId);
+      if (set) {
+        setRenameSetId(setId);
+        setRenameValue(set.name);
+      }
+    } else {
+      setRenameSetId(null);
+      setRenameValue(colors.defaultSetName || 'Default Set');
+    }
+    setIsRenameDialogOpen(true);
   };
 
   const generateCssText = () => {
@@ -377,7 +486,7 @@ export default function StyleGenerator() {
       return `${comment}:root {\n${variables}\n}\n\n.dark {\n${variables}\n}`;
     };
 
-    let css = generateColorBlock(colors.light, 'Default Set');
+    let css = generateColorBlock(colors.light, colors.defaultSetName || 'Default Set');
 
     if (colors.sets?.length) {
       colors.sets.forEach((set) => {
@@ -406,8 +515,35 @@ export default function StyleGenerator() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Color Sets</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setActiveSet(null)}>
-                  Default Set
+                <DropdownMenuItem 
+                  className="flex items-center justify-between group"
+                  onClick={() => setActiveSet(null)}
+                >
+                  <span>{colors.defaultSetName || 'Default Set'}</span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 bg-background"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateSet();
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 bg-background"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openRenameDialog();
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </DropdownMenuItem>
                 {colors.sets?.map((set) => (
                   <DropdownMenuItem
@@ -426,7 +562,18 @@ export default function StyleGenerator() {
                           handleDuplicateSet(set.id);
                         }}
                       >
-                        <Plus className="h-3 w-3" />
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 bg-background"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRenameDialog(set.id);
+                        }}
+                      >
+                        <Pencil className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -443,44 +590,10 @@ export default function StyleGenerator() {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <Dialog
-                  open={isNewSetDialogOpen}
-                  onOpenChange={setIsNewSetDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add New Set
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add a Color Set</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="name">Color Set Name</Label>
-                        <Input
-                          id="name"
-                          placeholder="Set name"
-                          value={newSetName}
-                          onChange={(e) => setNewSetName(e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="size">Max. Number of Colors</Label>
-                        <Input
-                          id="size"
-                          type="number"
-                          min="1"
-                          value={newSetSize}
-                          onChange={(e) => setNewSetSize(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <Button onClick={handleCreateSet}>Create Set</Button>
-                  </DialogContent>
-                </Dialog>
+                <DropdownMenuItem onClick={handleCreateNewSet}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Set
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -570,6 +683,31 @@ export default function StyleGenerator() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Color Set</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="rename">New Name</Label>
+              <Input
+                id="rename"
+                placeholder="Enter new name"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSet}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
