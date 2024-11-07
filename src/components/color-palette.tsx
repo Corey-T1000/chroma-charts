@@ -16,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from '@/hooks/use-toast';
 import { ColorScheme } from '@/lib/color-utils';
 
 interface ColorPaletteProps {
@@ -38,9 +37,7 @@ export function ColorPalette({
   onRemoveColor,
   maxColors
 }: ColorPaletteProps) {
-  const { toast } = useToast();
   const [selectedScheme, setSelectedScheme] = useState<ColorScheme>('mixed');
-  
   const canAddMore = !maxColors || colors.light.length < maxColors;
 
   const colorSchemes: { label: string; value: ColorScheme }[] = [

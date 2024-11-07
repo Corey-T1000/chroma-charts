@@ -53,12 +53,6 @@ function getLuminance(hex: string): number {
   return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
 }
 
-function getContrastRatio(l1: number, l2: number): number {
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
 function isColorInScheme(hex: string, scheme: ColorScheme): boolean {
   const hsl = hexToHsl(hex);
   
