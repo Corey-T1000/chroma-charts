@@ -12,39 +12,45 @@ Chroma-Charts was developed using [bolt.new](https://bolt.new) by the design tea
 
 ## Features
 
-- 🎨 **Smart Color Management**
+- 🎨 **Intelligent Color Management**
   - Import colors from CSS variables or hex values
-  - Automatic color name detection
-  - Multiple color set support
-  - Light/Dark mode palettes
+  - Smart color name detection and preservation
+  - Multiple color scheme support (Mixed, Warm, Cool, Neutral, Monochromatic)
+  - Automatic color generation with seed preservation
+  - Light/Dark mode palettes with automatic contrast adjustment
 
 - 📊 **Live Chart Preview**
   - Real-time visualization updates
   - Multiple chart types (Line, Bar, Pie)
-  - Light/Dark mode toggle
-  - Responsive design
+  - Interactive light/dark mode toggle
+  - Responsive design with automatic resizing
 
 - ♿️ **Accessibility First**
-  - Auto-generated accessible color combinations
   - WCAG contrast ratio compliance
   - Color-blind friendly palette suggestions
-  - Smart color distribution
+  - Smart color distribution for optimal readability
+  - Automatic contrast adjustments per mode
 
-- 💾 **Export Options**
-  - Export as CSS variables
+- 💾 **Advanced Export Options**
+  - Export as CSS variables with color names
   - Individual set or all sets export
   - Light and dark mode variables
-  - Shareable URL states
+  - Shareable URL states with compressed data
 
 ## Getting Started
 
 1. Visit [Chroma-Charts](https://chroma-charts.netlify.app)
-2. Import your colors:
+2. Import your colors using any of these methods:
    - Paste CSS variables
-   - Input hex values
+   - Input hex values (one per line or CSV)
    - Upload a CSS file
-3. Use the color picker to customize your charts
-4. Export your color palette as CSS
+3. Create color sets:
+   - Use the default set or add new sets
+   - Set maximum colors per set
+   - Generate colors automatically
+   - Fine-tune with the color picker
+4. Preview in different charts
+5. Export your color palette as CSS
 
 ## Usage Guide
 
@@ -79,28 +85,36 @@ The tool supports multiple color import formats:
    - Set a name and maximum color count
    - Each set maintains its own light/dark mode colors
 
-2. **Customizing Colors**
+2. **Generating Colors**
+   - Choose a color scheme (Mixed, Warm, Cool, Neutral, Monochromatic)
+   - Click "Generate" to create new color combinations
+   - Each generation preserves color relationships while creating unique variations
+
+3. **Customizing Colors**
    - Use the color picker to select from available colors
    - Click "Add Color" to expand the palette
-   - Use "Auto-Generate" for accessible combinations
+   - Remove colors with the 'x' button
+   - Colors automatically adjust for light/dark modes
 
-3. **Previewing**
+4. **Previewing**
    - See real-time updates across different chart types
    - Toggle between light and dark modes
-   - View all charts with current colors
+   - Charts automatically resize to fit the viewport
 
-4. **Exporting**
+5. **Exporting**
    - Export current set or all sets as CSS
    - Copy generated CSS variables
    - Share via URL (state is preserved)
+   - Color names are preserved in exports
 
 ### Best Practices
 
-- Start with your brand's core colors
-- Use Auto-Generate for accessible combinations
+- Start with your brand's core colors by importing them
+- Use different color schemes for different chart types
 - Test in both light and dark modes
 - Keep color count minimal for clear visualization
-- Create separate sets for different chart types
+- Create separate sets for different purposes
+- Use the automatic generation for accessible combinations
 
 ## Technical Details
 
@@ -130,10 +144,10 @@ src/
 
 ### Key Features Implementation
 
-- **Color Management**: Smart parsing of multiple color formats
-- **Accessibility**: WCAG-compliant color combinations
-- **State Management**: URL-based state preservation
-- **Responsive Design**: Mobile-friendly interface
+- **Color Management**: Smart parsing and preservation of color names
+- **Accessibility**: WCAG-compliant color combinations with contrast checking
+- **State Management**: URL-based state preservation with compression
+- **Responsive Design**: Mobile-friendly interface with fluid layouts
 
 ## License
 
@@ -146,4 +160,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Lucide](https://lucide.dev/) for the icons
 - [Tailwind CSS](https://tailwindcss.com/) for styling
 - [bolt.new](https://bolt.new) for development platform
-- [authzed](https://authzed.com) for supporting problem solving
+- [authzed](https://authzed.com) for supporting open source

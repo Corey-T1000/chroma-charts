@@ -1,11 +1,10 @@
-import { ThemeProvider } from '@/components/theme-provider';
 import StyleGenerator from '@/components/style-generator';
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+    <div className="min-h-screen bg-background">
       <StyleGenerator />
-    </ThemeProvider>
+    </div>
   );
 }
 

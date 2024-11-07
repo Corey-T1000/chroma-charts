@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FileUp, Code2, Upload } from 'lucide-react';
+import { FileUp, Code2, Upload, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { parseCssColors } from '@/lib/css-parser';
 import { ColorConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface CssImporterProps {
   onImport: (colors: ColorConfig, cssText?: string) => void;
@@ -15,6 +20,7 @@ interface CssImporterProps {
 export function CssImporter({ onImport }: CssImporterProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [cssText, setCssText] = useState('');
+  const [isGuideOpen, setIsGuideOpen] = useState(true);
   const { toast } = useToast();
 
   const cleanHexValue = (hex: string): string | null => {
@@ -93,10 +99,40 @@ export function CssImporter({ onImport }: CssImporterProps) {
 
   return (
     <div className="grid gap-6">
-      <div>
-        <div className="space-y-4">
+      <Collapsible open={isGuideOpen} onOpenChange={setIsGuideOpen}>
+        <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Quick Start Guide</h3>
-          <div className="space-y-4 text-sm text-muted-foreground">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+              <ChevronDown className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isGuideOpen ? "rotate-180" : ""
+              )} />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div className="space-y-4 mt-4 text-sm text-muted-foreground">
+            <div className="space-y-2">
+              <h4 className="font-medium text-foreground">Getting Started</h4>
+              <ol className="list-decimal pl-4 space-y-2">
+                <li>
+                  <strong>Import Colors:</strong> Start by importing your existing colors using any of the supported formats below
+                </li>
+                <li>
+                  <strong>Create Sets:</strong> Use the dropdown menu to create different color sets for various chart types
+                </li>
+                <li>
+                  <strong>Generate Palettes:</strong> Choose a color scheme and click "Generate" to create accessible combinations
+                </li>
+                <li>
+                  <strong>Preview & Adjust:</strong> Test your colors in different charts and modes, fine-tune as needed
+                </li>
+                <li>
+                  <strong>Export:</strong> Download your color palette as CSS variables or share via URL
+                </li>
+              </ol>
+            </div>
             <div className="space-y-2">
               <h4 className="font-medium text-foreground">Supported Formats</h4>
               <ul className="list-disc pl-4 space-y-1">
@@ -116,18 +152,17 @@ export function CssImporter({ onImport }: CssImporterProps) {
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Usage</h4>
-              <ol className="list-decimal pl-4 space-y-1">
-                <li>Import colors using any supported format</li>
-                <li>Colors will appear in the "Available Colors" palette</li>
-                <li>Click any chart color to assign from available colors</li>
-                <li>Use "Add Color" to include more chart colors</li>
-                <li>Preview updates automatically in the charts</li>
-              </ol>
+              <h4 className="font-medium text-foreground">Pro Tips</h4>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Use different color schemes for different types of charts</li>
+                <li>Test your palettes in both light and dark modes</li>
+                <li>Keep color count minimal for better readability</li>
+                <li>Save different sets for various use cases</li>
+              </ul>
             </div>
           </div>
-        </div>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div
         className={cn(
