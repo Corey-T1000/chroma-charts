@@ -8,14 +8,78 @@ interface HSL {
 
 export type ColorScheme = 'mixed' | 'warm' | 'cool' | 'neutral' | 'monochromatic';
 
+function selectDarkModeColor(color: string, availableColors: NamedColor[]): string {
+  const targetHsl = hexToHsl(color);
+  const darkHsl = {
+    h: targetHsl.h,
+    s: targetHsl.s,
+    l: Math.max(20, targetHsl.l - 20)
+  };
+
+  return availableColors
+    .map(c => ({
+      color: c.value,
+      hsl: hexToHsl(c.value),
+      distance: colorDistance(darkHsl, hexToHsl(c.value))
+    }))
+    .sort((a, b) => a.distance - b.distance)[0]?.color || color;
+}
+
+function colorDistance(a: HSL, b: HSL): number {
+  const hDiff = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h));
+  const sDiff = Math.abs(a.s - b.s);
+  const lDiff = Math.abs(a.l - b.l);
+  return hDiff + sDiff + lDiff;
+}
+
+function selectColorsForScheme(
+  availableColors: NamedColor[],
+  count: number,
+  scheme: ColorScheme,
+  seed: number
+): string[] {
+  const filteredColors = availableColors.filter(color => {
+    const hsl = hexToHsl(color.value);
+    switch (scheme) {
+      case 'warm':
+        return (hsl.h >= 0 && hsl.h <= 60) || (hsl.h >= 300 && hsl.h <= 360);
+      case 'cool':
+        return hsl.h > 60 && hsl.h < 300;
+      case 'neutral':
+        return hsl.s <= 30;
+      case 'monochromatic':
+      case 'mixed':
+        return true;
+      default:
+        return true;
+    }
+  });
+
+  if (filteredColors.length === 0) {
+    return Array(count).fill(availableColors[0]?.value || '#000000');
+  }
+
+  const selected: string[] = [];
+  const getRandom = () => Math.sin(seed + selected.length) * 0.5 + 0.5;
+
+  while (selected.length < count) {
+    const index = Math.floor(getRandom() * filteredColors.length);
+    const color = filteredColors[index].value;
+    if (!selected.includes(color)) {
+      selected.push(color);
+    }
+    seed += 1;
+  }
+
+  return selected;
+}
+
 function hexToHsl(hex: string): HSL {
-  // Normalize hex format
   hex = hex.replace(/^#/, '');
   if (hex.length === 3) {
     hex = hex.split('').map(char => char + char).join('');
   }
 
-  // Convert to RGB
   const r = parseInt(hex.slice(0, 2), 16) / 255;
   const g = parseInt(hex.slice(2, 4), 16) / 255;
   const b = parseInt(hex.slice(4, 6), 16) / 255;
@@ -84,110 +148,17 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${rHex}${gHex}${bHex}`.toUpperCase();
 }
 
-function generateBaseColors(scheme: ColorScheme, count: number, seed: number): string[] {
-  const colors: string[] = [];
-  const baseHue = Math.abs((seed * 137.508) % 360);
-  const seedOffset = Math.sin(seed * Math.PI * 2);
-  const variance = Math.abs(Math.cos(seed));
-
-  switch (scheme) {
-    case 'warm': {
-      for (let i = 0; i < count; i++) {
-        const phase = i / count;
-        const hue = phase < 0.5
-          ? (baseHue + i * 30 + seedOffset * 40) % 60
-          : 300 + ((i * 30 + seedOffset * 40) % 60);
-        const sat = 65 + variance * 20;
-        const light = 45 + (phase * variance * 20);
-        colors.push(hslToHex(hue, sat, light));
-      }
-      break;
-    }
-    case 'cool': {
-      const hueStep = 120 / Math.max(1, count - 1);
-      for (let i = 0; i < count; i++) {
-        const phase = i / count;
-        const hue = 180 + (i * hueStep + seedOffset * 40);
-        const sat = 60 + variance * 20;
-        const light = 45 + (phase * variance * 20);
-        colors.push(hslToHex(hue, sat, light));
-      }
-      break;
-    }
-    case 'neutral': {
-      const hueStep = 360 / count;
-      for (let i = 0; i < count; i++) {
-        const phase = i / count;
-        const hue = (baseHue + i * hueStep + seedOffset * 40) % 360;
-        const sat = 15 + variance * 15;
-        const light = 55 + (phase * variance * 20);
-        colors.push(hslToHex(hue, sat, light));
-      }
-      break;
-    }
-    case 'monochromatic': {
-      const hue = (baseHue + seedOffset * 60) % 360;
-      for (let i = 0; i < count; i++) {
-        const phase = i / count;
-        const sat = 45 + (phase * 30) + (variance * 20);
-        const light = 35 + (phase * 30) + (variance * 15);
-        colors.push(hslToHex(hue, sat, light));
-      }
-      break;
-    }
-    default: { // mixed
-      const hueStep = 360 / count;
-      for (let i = 0; i < count; i++) {
-        const phase = i / count;
-        const hue = (baseHue + i * hueStep + seedOffset * 60) % 360;
-        const sat = 65 + variance * 20;
-        const light = 45 + (phase * variance * 20);
-        colors.push(hslToHex(hue, sat, light));
-      }
-      break;
-    }
-  }
-
-  return colors;
+function generateNeutralVariation(hsl: HSL, index: number, count: number, getRandom: () => number): string {
+  const phase = index / (count - 1);
+  const newHsl = {
+    h: hsl.h,
+    s: Math.max(0, Math.min(30, hsl.s + (getRandom() * 10 - 5))),
+    l: Math.max(20, Math.min(80, 30 + phase * 50 + (getRandom() * 10 - 5)))
+  };
+  return hslToHex(newHsl.h, newHsl.s, newHsl.l);
 }
 
-function getLuminance(hex: string): number {
-  const rgb = hex.replace(/^#/, '').match(/.{2}/g)!
-    .map(x => parseInt(x, 16) / 255)
-    .map(x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4));
-  
-  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-}
-
-function isColorInScheme(hex: string, scheme: ColorScheme): boolean {
-  const hsl = hexToHsl(hex);
-  
-  switch (scheme) {
-    case 'warm':
-      return (hsl.h >= 0 && hsl.h <= 60) || (hsl.h >= 300 && hsl.h <= 360);
-    case 'cool':
-      return hsl.h > 60 && hsl.h < 300;
-    case 'neutral':
-      return hsl.s <= 30;
-    case 'monochromatic':
-      return true;
-    case 'mixed':
-      return true;
-    default:
-      return true;
-  }
-}
-
-function isSuitableForMode(hex: string, isLight: boolean): boolean {
-  const luminance = getLuminance(hex);
-  return isLight ? luminance < 0.7 : luminance > 0.25 && luminance < 0.8;
-}
-
-function sortByLuminance(colors: string[]): string[] {
-  return [...colors].sort((a, b) => getLuminance(a) - getLuminance(b));
-}
-
-function adjustColorForMode(color: string, isLight: boolean): string {
+function adjustForMode(color: string, isLight: boolean): string {
   const hsl = hexToHsl(color);
   if (isLight) {
     return hslToHex(
@@ -199,79 +170,70 @@ function adjustColorForMode(color: string, isLight: boolean): string {
     return hslToHex(
       hsl.h,
       Math.min(100, hsl.s + 10),
-      Math.max(0, hsl.l - 10)
+      Math.max(20, hsl.l - 15)
     );
   }
-}
-
-function selectColorsForScheme(
-  availableColors: string[],
-  count: number,
-  scheme: ColorScheme,
-  seed: number,
-  isLight: boolean
-): string[] {
-  let suitableColors = availableColors
-    .filter(color => isColorInScheme(color, scheme))
-    .filter(color => isSuitableForMode(color, isLight));
-
-  if (scheme === 'monochromatic') {
-    const baseColor = suitableColors[Math.floor(Math.abs(Math.sin(seed * Math.PI)) * suitableColors.length)];
-    const baseHsl = hexToHsl(baseColor);
-    
-    const variations: string[] = [];
-    for (let i = 0; i < count; i++) {
-      const phase = i / (count - 1);
-      const saturation = Math.min(100, baseHsl.s + (phase - 0.5) * 40 + Math.sin(seed) * 20);
-      const lightness = Math.min(100, baseHsl.l + (phase - 0.5) * 30 + Math.cos(seed) * 15);
-      variations.push(hslToHex(baseHsl.h, saturation, lightness));
-    }
-    
-    return variations;
-  }
-
-  // Generate new colors if we don't have enough suitable ones
-  if (suitableColors.length < count) {
-    const newColors = generateBaseColors(scheme, count, seed + Math.random());
-    suitableColors = [...suitableColors, ...newColors];
-  }
-
-  // Sort by luminance and select colors with good distribution
-  const sorted = sortByLuminance(suitableColors);
-  const selected: string[] = [];
-  
-  // Select colors with good distribution
-  for (let i = 0; i < count; i++) {
-    const phase = i / (count - 1);
-    const index = Math.floor(phase * (sorted.length - 1) + (Math.sin(seed + i) * 0.2 * sorted.length));
-    selected.push(sorted[Math.max(0, Math.min(sorted.length - 1, index))]);
-  }
-
-  return selected;
 }
 
 export function generateAccessiblePalette(
   colors: NamedColor[],
   count: number,
   seed: number = 0,
-  scheme: ColorScheme = 'mixed'
+  scheme: ColorScheme = 'mixed',
+  strictMode: boolean = false
 ): { light: string[], dark: string[] } {
-  const uniqueColors = Array.from(new Set(colors.map(c => c.value)))
-    .filter(color => color !== '#000000' && color !== '#ffffff');
-
-  if (uniqueColors.length === 0) {
-    const baseColors = generateBaseColors(scheme, count, seed);
+  if (colors.length === 0) {
     return {
-      light: baseColors.map(color => adjustColorForMode(color, true)),
-      dark: baseColors.map(color => adjustColorForMode(color, false))
+      light: Array(count).fill('#000000'),
+      dark: Array(count).fill('#FFFFFF')
     };
   }
 
-  const light = selectColorsForScheme(uniqueColors, count, scheme, seed, true);
-  const dark = selectColorsForScheme(uniqueColors, count, scheme, seed + Math.PI, false);
+  if (strictMode) {
+    const light = selectColorsForScheme(colors, count, scheme, seed);
+    const dark = light.map(color => selectDarkModeColor(color, colors));
+    return { light, dark };
+  }
 
-  return {
-    light: light.map(color => adjustColorForMode(color, true)),
-    dark: dark.map(color => adjustColorForMode(color, false))
-  };
+  const baseColors = selectColorsForScheme(colors, Math.min(count, colors.length), scheme, seed);
+  const light: string[] = [];
+  const dark: string[] = [];
+
+  if (scheme === 'monochromatic') {
+    const baseColor = baseColors[Math.floor(Math.abs(Math.sin(seed)) * baseColors.length)];
+    const baseHsl = hexToHsl(baseColor);
+    
+    for (let i = 0; i < count; i++) {
+      const phase = i / (count - 1);
+      const lightColor = hslToHex(
+        baseHsl.h,
+        Math.max(20, Math.min(80, baseHsl.s + (phase * 40 - 20) + (Math.sin(seed + i) * 20 - 10))),
+        Math.max(30, Math.min(80, 30 + phase * 50 + (Math.sin(seed + i + Math.PI) * 20 - 10)))
+      );
+      light.push(lightColor);
+      dark.push(adjustForMode(lightColor, false));
+    }
+  } else {
+    for (let i = 0; i < count; i++) {
+      const baseColor = baseColors[i % baseColors.length];
+      const hsl = hexToHsl(baseColor);
+      
+      let lightColor: string;
+      
+      if (scheme === 'neutral') {
+        lightColor = generateNeutralVariation(hsl, i, count, () => Math.abs(Math.sin(seed + i)));
+      } else {
+        lightColor = hslToHex(
+          (hsl.h + (i * 30 + Math.sin(seed + i) * 20 - 10)) % 360,
+          Math.min(90, hsl.s + (Math.sin(seed + i + Math.PI) * 20 - 10)),
+          Math.min(90, Math.max(40, hsl.l + (Math.sin(seed + i + Math.PI * 2) * 20 - 10)))
+        );
+      }
+      
+      light.push(lightColor);
+      dark.push(adjustForMode(lightColor, false));
+    }
+  }
+
+  return { light, dark };
 }

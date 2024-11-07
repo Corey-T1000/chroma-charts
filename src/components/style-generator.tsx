@@ -43,6 +43,7 @@ const defaultColors: ColorConfig = {
   dark: ['#ffffff'],
   names: {},
   sets: [],
+  strictMode: false,
 };
 
 export default function StyleGenerator() {
@@ -196,19 +197,15 @@ export default function StyleGenerator() {
   };
 
   const handleAutoGenerate = (scheme: ColorScheme = 'mixed') => {
-    const currentSize = getCurrentColors().light.length;
-    const currentColors = getCurrentColors().light.map((color, index) => ({
-      name: `Color ${index + 1}`,
-      value: color
-    }));
-
-    const seed = autoGenCounter + Math.random() * 1000;
-
+    const currentColors = getCurrentColors();
+    const currentSize = currentColors.light.length;
+    
     const { light, dark } = generateAccessiblePalette(
-      availableColors.length > 0 ? availableColors : currentColors,
+      availableColors,
       currentSize,
-      seed,
-      scheme
+      autoGenCounter + Math.random() * 1000,
+      scheme,
+      currentColors.strictMode
     );
 
     if (light.length > 0 && dark.length > 0) {
@@ -241,6 +238,27 @@ export default function StyleGenerator() {
     }
   };
 
+  const handleStrictModeChange = (enabled: boolean) => {
+    if (activeSet) {
+      setColors((prev) => ({
+        ...prev,
+        sets: prev.sets?.map((set) =>
+          set.id === activeSet
+            ? {
+                ...set,
+                strictMode: enabled,
+              }
+            : set
+        ),
+      }));
+    } else {
+      setColors((prev) => ({
+        ...prev,
+        strictMode: enabled,
+      }));
+    }
+  };
+
   const handleImport = (importedColors: ColorConfig, cssText?: string) => {
     if (cssText) {
       const namedColors = parseNamedColors(cssText);
@@ -255,6 +273,7 @@ export default function StyleGenerator() {
           dark: [namedColors[0].value],
           names,
           sets: [],
+          strictMode: true,
         });
         return;
       }
@@ -266,6 +285,7 @@ export default function StyleGenerator() {
         light: [importedColors.light[0] || '#000000'],
         dark: [importedColors.dark[0] || '#ffffff'],
         sets: [],
+        strictMode: true,
       });
     }
   };
@@ -483,6 +503,7 @@ export default function StyleGenerator() {
                     onAddColor={handleAddColor}
                     onAutoGenerate={handleAutoGenerate}
                     onRemoveColor={handleRemoveColor}
+                    onStrictModeChange={handleStrictModeChange}
                     maxColors={
                       activeSet
                         ? colors.sets?.find((s) => s.id === activeSet)?.size

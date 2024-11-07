@@ -4,6 +4,7 @@ export interface ColorConfig {
   names?: { [key: string]: string };
   sets?: ColorSet[];
   defaultSetName?: string;
+  strictMode?: boolean;
 }
 
 export interface NamedColor {

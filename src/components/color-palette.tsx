@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ColorConfig, NamedColor } from '@/lib/types';
-import { Plus, Wand2, X, Palette, ChevronDown } from 'lucide-react';
+import { Plus, Wand2, X, Palette, ChevronDown, Lock, Unlock, Shuffle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   Popover,
   PopoverContent,
@@ -25,6 +26,7 @@ interface ColorPaletteProps {
   onAddColor: () => void;
   onAutoGenerate: (scheme: ColorScheme) => void;
   onRemoveColor: (index: number) => void;
+  onStrictModeChange: (enabled: boolean) => void;
   maxColors?: number;
 }
 
@@ -35,6 +37,7 @@ export function ColorPalette({
   onAddColor,
   onAutoGenerate,
   onRemoveColor,
+  onStrictModeChange,
   maxColors
 }: ColorPaletteProps) {
   const [selectedScheme, setSelectedScheme] = useState<ColorScheme>('mixed');
@@ -50,6 +53,29 @@ export function ColorPalette({
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="strict-mode"
+            checked={colors.strictMode}
+            onCheckedChange={onStrictModeChange}
+          />
+          <Label htmlFor="strict-mode" className="flex items-center gap-2">
+            {colors.strictMode ? (
+              <>
+                <Lock className="h-4 w-4" />
+                <span>Use exact imported colors only</span>
+              </>
+            ) : (
+              <>
+                <Unlock className="h-4 w-4" />
+                <span>Allow color modifications</span>
+              </>
+            )}
+          </Label>
+        </div>
+      </div>
+
       {(['light', 'dark'] as const).map((mode) => (
         <div key={mode} className="space-y-4">
           <div className="flex items-center justify-between">
@@ -86,12 +112,26 @@ export function ColorPalette({
                 size="sm"
                 onClick={() => onAutoGenerate(selectedScheme)}
               >
-                <Wand2 className="mr-2 h-4 w-4" />
-                Generate
+                {colors.strictMode ? (
+                  <>
+                    <Shuffle className="mr-2 h-4 w-4" />
+                    Shuffle
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generate
+                  </>
+                )}
               </Button>
 
               {canAddMore && (
-                <Button onClick={onAddColor} variant="outline" size="sm">
+                <Button 
+                  onClick={onAddColor} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={colors.strictMode && colors.light.length >= availableColors.length}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Color
                 </Button>
@@ -124,7 +164,7 @@ export function ColorPalette({
                       >
                         <ScrollArea className="h-[320px]">
                           <div className="grid grid-cols-4 gap-1 p-1">
-                            {availableColors.map((colorOption) => (
+                            {(colors.strictMode ? availableColors : [...availableColors]).map((colorOption) => (
                               <Button
                                 key={`${colorOption.name}-${colorOption.value}`}
                                 variant="ghost"
