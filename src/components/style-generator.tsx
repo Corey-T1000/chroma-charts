@@ -18,7 +18,6 @@ import {
 } from '@/lib/compression';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
@@ -28,14 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { ColorScheme, generateAccessiblePalette } from '@/lib/color-utils';
 
 const defaultColors: ColorConfig = {
@@ -51,9 +42,6 @@ export function StyleGenerator() {
   const [availableColors, setAvailableColors] = useState<NamedColor[]>([]);
   const [autoGenCounter, setAutoGenCounter] = useState(0);
   const [activeSet, setActiveSet] = useState<string | null>(null);
-  const [newSetName, setNewSetName] = useState('');
-  const [newSetSize, setNewSetSize] = useState('3');
-  const [isNewSetDialogOpen, setIsNewSetDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -322,7 +310,6 @@ export function StyleGenerator() {
       setToDuplicate = foundSet;
       sourceName = foundSet.name;
     } else {
-      // Duplicate default set
       setToDuplicate = {
         light: [...colors.light],
         dark: [...colors.dark],
@@ -335,7 +322,7 @@ export function StyleGenerator() {
     const newSet: ColorSet = {
       id: `set-${Date.now()}`,
       name: `${sourceName} (Copy)`,
-      size: setToDuplicate.size || setToDuplicate.light.length,
+      size: 'size' in setToDuplicate ? setToDuplicate.size : setToDuplicate.light.length,
       light: [...setToDuplicate.light],
       dark: [...setToDuplicate.dark],
       strictMode: setToDuplicate.strictMode
