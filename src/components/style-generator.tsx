@@ -299,6 +299,10 @@ export function StyleGenerator() {
     if (activeSet === setId) {
       setActiveSet(null);
     }
+    toast({
+      title: "Set deleted",
+      description: "The color set has been removed.",
+    });
   };
 
   const handleDuplicateSet = (setId?: string) => {

@@ -13,6 +13,7 @@ Chroma-Charts was developed using [bolt.new](https://bolt.new) by the design tea
 ## Features
 
 - 🎨 **Intelligent Color Management**
+
   - Import colors from CSS variables or hex values
   - Smart color name detection and preservation
   - Multiple color scheme support (Mixed, Warm, Cool, Neutral, Monochromatic)
@@ -20,12 +21,14 @@ Chroma-Charts was developed using [bolt.new](https://bolt.new) by the design tea
   - Light/Dark mode palettes with automatic contrast adjustment
 
 - 📊 **Live Chart Preview**
+
   - Real-time visualization updates
   - Multiple chart types (Line, Bar, Pie)
   - Interactive light/dark mode toggle
   - Responsive design with automatic resizing
 
 - ♿️ **Accessibility First**
+
   - WCAG contrast ratio compliance
   - Color-blind friendly palette suggestions
   - Smart color distribution for optimal readability
@@ -59,16 +62,20 @@ Chroma-Charts was developed using [bolt.new](https://bolt.new) by the design tea
 The tool supports multiple color import formats:
 
 1. **CSS Variables**
+
    ```css
    --primary: 220 100% 50%;
    --accent: 280 80% 60%;
    ```
 
 2. **Hex Values**
+
    ```
    F7F6F7, F1F0F2, DEDCDF
    ```
+
    or
+
    ```
    #F7F6F7
    #F1F0F2
@@ -81,22 +88,26 @@ The tool supports multiple color import formats:
 ### Managing Color Sets
 
 1. **Creating Sets**
+
    - Click "Add New Set" in the dropdown menu
    - Set a name and maximum color count
    - Each set maintains its own light/dark mode colors
 
 2. **Generating Colors**
+
    - Choose a color scheme (Mixed, Warm, Cool, Neutral, Monochromatic)
    - Click "Generate" to create new color combinations
    - Each generation preserves color relationships while creating unique variations
 
 3. **Customizing Colors**
+
    - Use the color picker to select from available colors
    - Click "Add Color" to expand the palette
    - Remove colors with the 'x' button
    - Colors automatically adjust for light/dark modes
 
 4. **Previewing**
+
    - See real-time updates across different chart types
    - Toggle between light and dark modes
    - Charts automatically resize to fit the viewport
