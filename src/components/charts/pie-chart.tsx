@@ -8,7 +8,7 @@ interface PieChartProps {
 export function PieChartComponent({ data, colors }: PieChartProps) {
   return (
     <ResponsiveContainer>
-      <RechartsPieChart margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+      <RechartsPieChart margin={{ top: 16, right: 80, bottom: 16, left: 16 }}>
         <Pie
           data={data}
           dataKey="value"
@@ -24,10 +24,10 @@ export function PieChartComponent({ data, colors }: PieChartProps) {
         >
           {data.map((_, index) => (
             <Cell 
-              key={index} 
+              key={`cell-${index}`}
               fill={colors[index]}
               opacity={0.9}
-              name={`Series ${index + 1}`}
+              name={`${index + 1}`}
             />
           ))}
         </Pie>
@@ -39,7 +39,7 @@ export function PieChartComponent({ data, colors }: PieChartProps) {
             fontSize: '12px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}
-          formatter={(value, name) => [`${value}`, name]}
+          formatter={(value, name) => [`${value}`, `Series ${name}`]}
         />
         <Legend 
           verticalAlign="middle" 
@@ -47,6 +47,7 @@ export function PieChartComponent({ data, colors }: PieChartProps) {
           layout="vertical"
           iconType="circle"
           iconSize={8}
+          formatter={(value) => `Series ${value}`}
           wrapperStyle={{
             fontSize: '12px',
             paddingLeft: '24px',

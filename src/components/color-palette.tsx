@@ -1,24 +1,31 @@
-import { useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ColorConfig, NamedColor } from '@/lib/types';
-import { Plus, Wand2, X } from 'lucide-react';
+import { Plus, Wand2, X, Palette, ChevronDown } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from '@/hooks/use-toast';
+import { ColorScheme } from '@/lib/color-utils';
 
 interface ColorPaletteProps {
   colors: ColorConfig;
   availableColors: NamedColor[];
   onColorChange: (mode: 'light' | 'dark', index: number, color: string) => void;
   onAddColor: () => void;
-  onAutoGenerate: () => void;
+  onAutoGenerate: (scheme: ColorScheme) => void;
   onRemoveColor: (index: number) => void;
-  autoGenCounter: number;
   maxColors?: number;
 }
 
@@ -29,36 +36,20 @@ export function ColorPalette({
   onAddColor,
   onAutoGenerate,
   onRemoveColor,
-  autoGenCounter,
   maxColors
 }: ColorPaletteProps) {
   const { toast } = useToast();
+  const [selectedScheme, setSelectedScheme] = useState<ColorScheme>('mixed');
   
-  const uniqueColors = useMemo(() => {
-    const colorMap = new Map();
-    
-    if (availableColors.length > 0) {
-      availableColors.forEach(c => {
-        if (c.value !== '#000000' && c.value !== '#ffffff') {
-          colorMap.set(`${c.name}-${c.value}`, { ...c });
-        }
-      });
-    } else {
-      [...colors.light, ...colors.dark].forEach((color, index) => {
-        if (color !== '#000000' && color !== '#ffffff') {
-          colorMap.set(`color-${index}-${color}`, { name: color, value: color });
-        }
-      });
-    }
-    
-    return Array.from(colorMap.values());
-  }, [colors, availableColors]);
-
-  const handleAutoGenerate = useCallback(() => {
-    onAutoGenerate();
-  }, [onAutoGenerate]);
-
   const canAddMore = !maxColors || colors.light.length < maxColors;
+
+  const colorSchemes: { label: string; value: ColorScheme }[] = [
+    { label: 'Mixed Colors', value: 'mixed' },
+    { label: 'Warm Colors', value: 'warm' },
+    { label: 'Cool Colors', value: 'cool' },
+    { label: 'Neutral Colors', value: 'neutral' },
+    { label: 'Monochromatic', value: 'monochromatic' },
+  ];
 
   return (
     <div className="space-y-8">
@@ -67,14 +58,41 @@ export function ColorPalette({
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold capitalize">{mode} Mode</h2>
             <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Palette className="mr-2 h-4 w-4" />
+                    {colorSchemes.find(s => s.value === selectedScheme)?.label || 'Color Scheme'}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuRadioGroup 
+                    value={selectedScheme} 
+                    onValueChange={(value) => setSelectedScheme(value as ColorScheme)}
+                  >
+                    {colorSchemes.map((scheme) => (
+                      <DropdownMenuRadioItem
+                        key={scheme.value}
+                        value={scheme.value}
+                        className="cursor-pointer"
+                      >
+                        {scheme.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button 
-                onClick={handleAutoGenerate} 
                 variant="outline" 
                 size="sm"
+                onClick={() => onAutoGenerate(selectedScheme)}
               >
                 <Wand2 className="mr-2 h-4 w-4" />
-                Auto-Generate
+                Generate
               </Button>
+
               {canAddMore && (
                 <Button onClick={onAddColor} variant="outline" size="sm">
                   <Plus className="mr-2 h-4 w-4" />
@@ -109,7 +127,7 @@ export function ColorPalette({
                       >
                         <ScrollArea className="h-[320px]">
                           <div className="grid grid-cols-4 gap-1 p-1">
-                            {uniqueColors.map((colorOption) => (
+                            {availableColors.map((colorOption) => (
                               <Button
                                 key={`${colorOption.name}-${colorOption.value}`}
                                 variant="ghost"

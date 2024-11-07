@@ -15,7 +15,7 @@ interface LineChartProps {
 export function LineChartComponent({ data, colors, series }: LineChartProps) {
   return (
     <ResponsiveContainer>
-      <RechartsLineChart data={data} margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
+      <RechartsLineChart data={data} margin={{ top: 16, right: 80, bottom: 16, left: 16 }}>
         <CartesianGrid 
           strokeDasharray="3 3" 
           horizontal={true}
@@ -34,13 +34,17 @@ export function LineChartComponent({ data, colors, series }: LineChartProps) {
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}
           cursor={{ strokeWidth: 1, strokeDasharray: '3 3' }}
+          formatter={(value, name) => [value, name]}
         />
         <Legend 
-          verticalAlign="top"
-          height={36}
+          verticalAlign="middle" 
+          align="right"
+          layout="vertical"
           iconType="circle"
           iconSize={8}
           wrapperStyle={{
+            fontSize: '12px',
+            paddingLeft: '24px',
             color: 'var(--foreground)'
           }}
         />

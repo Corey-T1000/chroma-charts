@@ -8,7 +8,7 @@ import { Moon, Sun } from 'lucide-react';
 
 interface ChartData {
   name: string;
-  [key: string]: string | number; // Add index signature
+  [key: string]: string | number;
 }
 
 function generateData(colorCount: number): ChartData[] {
@@ -19,7 +19,7 @@ function generateData(colorCount: number): ChartData[] {
 
   // For each color/series, generate unique values
   for (let i = 0; i < colorCount; i++) {
-    const seriesName = `series${i + 1}`;
+    const seriesName = `Series ${i + 1}`;
     const baseValue = Math.random() * 400 + 200; // Random base between 200-600
     const variance = Math.random() * 200 + 100; // Random variance between 100-300
 
@@ -50,15 +50,18 @@ export function ChartPreview({ colors }: ChartPreviewProps) {
 
   // Create series configuration for the line chart
   const series = activeColors.map((_, index) => ({
-    dataKey: `series${index + 1}`,
+    dataKey: `Series ${index + 1}`,
     name: `Series ${index + 1}`
   }));
 
   // Transform data for bar and pie charts
-  const barData = activeColors.map((_, index) => ({
-    name: `Series ${index + 1}`,
-    value: data[Math.floor(data.length / 2)][`series${index + 1}`] as number
-  }));
+  const barData = activeColors.map((_, index) => {
+    const seriesName = `Series ${index + 1}`;
+    return {
+      name: seriesName,
+      value: data[Math.floor(data.length / 2)][seriesName] as number
+    };
+  });
 
   return (
     <div className="space-y-6">
